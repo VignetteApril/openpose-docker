@@ -1,18 +1,27 @@
 version: '3.8'
 services:
   openpose:
-    image: your_openpose_image_name # 替换为你的镜像名
-    container_name: openpose_camera
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - /dev/video0:/dev/video0 # 将主机摄像头设备挂载到容器
+      - .:/app # 将主机的主目录挂载到容器的 /app 目录
+      - /dev/video0:/dev/video0 # 挂载摄像头设备
     devices:
       - /dev/video0:/dev/video0 # 提供设备访问权限
+    working_dir: /app # 设置容器的工作目录为 /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
     environment:
-      - DISPLAY=${DISPLAY} # 显示环境变量（如需要在容器内渲染）
+      - NVIDIA_VISIBLE_DEVICES=all # 使用所有 GPU
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+      - DISPLAY=${DISPLAY} # 设置显示变量
       - QT_X11_NO_MITSHM=1
-    network_mode: "host" # 如果需要使用主机的网络堆栈
+    network_mode: "host" # 如果需要主机网络堆栈
     ipc: host # 共享主机的进程间通信机制
     privileged: true # 允许容器访问硬件
